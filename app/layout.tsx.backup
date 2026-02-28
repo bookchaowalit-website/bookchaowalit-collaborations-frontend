@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     siteName: 'Bookchaowalit',
     images: [
       {
-        url: '/og-image.svg',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
         alt: 'Bookchaowalit',
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Bookchaowalit - Bookchaowalit',
     description: 'Bookchaowalit by Bookchaowalit - A modern web application built with Next.js',
-    images: ['/og-image.svg'],
+    images: ['/og-image.png'],
     creator: '@bookchaowalit',
   },
   robots: {
@@ -69,55 +69,6 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-  {/* Structured Data for SEO */}
-  <script
-    type="application/ld+json"
-    dangerouslySetInnerHTML={{
-      __html: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'WebApplication',
-        name: 'Collaborations',
-        url: 'https://bookchaowalit-collaborations.vercel.app',
-        description: 'Collaborations by Bookchaowalit - A modern web application',
-        applicationCategory: 'UtilitiesApplication',
-        operatingSystem: 'Web',
-        offers: {
-          '@type': 'Offer',
-          price: '0',
-          priceCurrency: 'USD'
-        },
-        author: {
-          '@type': 'Person',
-          name: 'Bookchaowalit',
-          url: 'https://bookchaowalit.com'
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Bookchaowalit',
-          url: 'https://bookchaowalit.com'
-        }
-      })
-    }}
-  />
-
-  <script
-    type="application/ld+json"
-    dangerouslySetInnerHTML={{
-      __html: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'WebSite',
-        name: 'Collaborations',
-        url: 'https://bookchaowalit-collaborations.vercel.app',
-        potentialAction: {
-          '@type': 'SearchAction',
-          target: 'https://bookchaowalit-collaborations.vercel.app/more-projects',
-          'query-input': 'required name=search_term'
-        }
-      })
-    }}
-  />
-
-
         {children}
       </body>
     </html>
