@@ -1,70 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-function Shell({
-  title,
-  subtitle,
-  badge = "Portfolio demo · local-only",
-  children,
-}: {
-  title: string;
-  subtitle: string;
-  badge?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-black dark:text-zinc-100">
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        <header className="mb-8">
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">{badge}</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">{title}</h1>
-          <p className="mt-2 max-w-2xl text-sm text-zinc-600 dark:text-zinc-400">{subtitle}</p>
-        </header>
-        {children}
-        <footer className="mt-10 border-t border-zinc-200 pt-4 text-xs text-zinc-500 dark:border-zinc-800">
-          Honest demo: no multi-tenant backend. State (if any) stays in this browser.
-        </footer>
-      </div>
-    </div>
-  );
-}
+type Item = { id: string; title: string; body: string; status: string; createdAt: number };
 
-function Button({
-  children,
-  onClick,
-  variant = "primary",
-  disabled,
-  type = "button",
-  className = "",
-}: {
-  children: ReactNode;
-  onClick?: () => void;
-  variant?: "primary" | "secondary" | "ghost" | "danger";
-  disabled?: boolean;
-  type?: "button" | "submit";
-  className?: string;
-}) {
-  const base =
-    "inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition disabled:opacity-50 " +
-    className;
-  const styles =
-    variant === "primary"
-      ? "bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900"
-      : variant === "secondary"
-        ? "bg-white text-zinc-900 ring-1 ring-zinc-200 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-100 dark:ring-zinc-700"
-        : variant === "danger"
-          ? "bg-red-600 text-white hover:bg-red-500"
-          : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900";
-  return (
-    <button type={type} disabled={disabled} onClick={onClick} className={`${base} ${styles}`}>
-      {children}
-    </button>
-  );
-}
-
-const inputClass =
-  "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none ring-zinc-400 focus:ring-2 dark:border-zinc-700 dark:bg-zinc-950";
+const SEED: Item[] = [
+  { id: "1", title: "Open source docs", body: "Write guides together", status: "Open", createdAt: Date.now() - 86400000 },
+  { id: "2", title: "Field notes exchange", body: "Share a research pass", status: "Draft", createdAt: Date.now() - 3 * 86400000 },
+];
 
 function useLocalStorage<T>(key: string, initial: T) {
   const [value, setValue] = useState<T>(initial);
@@ -72,126 +15,65 @@ function useLocalStorage<T>(key: string, initial: T) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(key);
-      if (raw != null) setValue(JSON.parse(raw) as T);
-    } catch {
-      /* ignore */
-    }
+      if (raw) setValue(JSON.parse(raw) as T);
+    } catch { /* keep the seed */ }
     setReady(true);
   }, [key]);
   useEffect(() => {
-    if (!ready) return;
-    localStorage.setItem(key, JSON.stringify(value));
+    if (ready) localStorage.setItem(key, JSON.stringify(value));
   }, [key, value, ready]);
   return [value, setValue] as const;
 }
 
-function uid() {
-  return crypto.randomUUID();
-}
-
-async function copyText(text: string) {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-
-type Item = { id: string; title: string; body: string; status: string; createdAt: number };
-
-const SEED: Item[] = [{"title": "Open source docs", "body": "Write guides together", "status": "Open"}].map((x: any, i: number) => ({
-  id: String(x.id ?? i + 1),
-  title: x.title,
-  body: x.body,
-  status: x.status,
-  createdAt: x.createdAt ?? Date.now() - i * 86400000,
-}));
-
-const FIELDS = [{"key": "title", "label": "Title", "type": "text"}, {"key": "body", "label": "Details", "type": "textarea"}, {"key": "status", "label": "Status", "type": "select", "options": ["Draft", "Active", "Done"]}] as { key: "title" | "body" | "status"; label: string; type: string; options?: string[] }[];
-
 export default function Home() {
   const [items, setItems] = useLocalStorage<Item[]>("collabs-v1", SEED);
   const [query, setQuery] = useState("");
-  const [draft, setDraft] = useState<Record<string, string>>(() =>
-    Object.fromEntries(FIELDS.map((f) => [f.key, f.options?.[0] ?? ""]))
+  const [draft, setDraft] = useState({ title: "", body: "", status: "Draft" });
+  const filtered = useMemo(
+    () => items.filter((item) => `${item.title} ${item.body} ${item.status}`.toLowerCase().includes(query.toLowerCase())),
+    [items, query],
   );
-
-  const filtered = items.filter((it) =>
-    (it.title + it.body + it.status).toLowerCase().includes(query.toLowerCase())
-  );
-
-  const add = () => {
-    if (!String(draft.title || "").trim()) return;
-    setItems((prev) => [
-      {
-        id: uid(),
-        title: draft.title || "",
-        body: draft.body || "",
-        status: draft.status || "",
-        createdAt: Date.now(),
-      },
-      ...prev,
-    ]);
-    setDraft(Object.fromEntries(FIELDS.map((f) => [f.key, f.options?.[0] ?? ""])));
+  const addItem = () => {
+    if (!draft.title.trim()) return;
+    setItems((current) => [{ ...draft, id: crypto.randomUUID(), createdAt: Date.now() }, ...current]);
+    setDraft({ title: "", body: "", status: "Draft" });
   };
+  const openCount = items.filter((item) => item.status === "Open" || item.status === "Active").length;
 
   return (
-    <Shell title="Collaborations" subtitle="Track collab requests.">
-      <div className="mb-4 flex flex-wrap gap-2">
-        <input className={`${inputClass} max-w-sm`} placeholder="Search" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <span className="self-center text-sm text-zinc-500">{filtered.length} items</span>
-      </div>
-      <div className="mb-6 grid gap-2 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 md:grid-cols-2">
-        {FIELDS.map((f) => (
-          <label key={f.key} className="block space-y-1">
-            <span className="text-xs font-medium text-zinc-500">{f.label}</span>
-            {f.type === "textarea" ? (
-              <textarea
-                className={`${inputClass} min-h-[72px]`}
-                value={draft[f.key] || ""}
-                onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
-              />
-            ) : f.type === "select" ? (
-              <select
-                className={inputClass}
-                value={draft[f.key] || ""}
-                onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
-              >
-                {(f.options || []).map((o) => (
-                  <option key={o}>{o}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                className={inputClass}
-                value={draft[f.key] || ""}
-                onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
-              />
-            )}
-          </label>
-        ))}
-        <div className="md:col-span-2">
-          <Button onClick={add}>Add</Button>
+    <main className="folio-shell">
+      <header className="folio-header">
+        <div className="folio-mark" aria-hidden="true"><span>✳</span><span>✿</span><span>✳</span></div>
+        <div>
+          <p className="folio-kicker">COLLABORATIONS / FIELD FOLIO</p>
+          <h1>Grow the right work<br /><em>with the right people.</em></h1>
+          <p className="folio-intro">A small, local notebook for ideas that want another set of hands. Keep the request, the context, and its living status in one place.</p>
         </div>
-      </div>
-      <ul className="space-y-2">
-        {filtered.map((it) => (
-          <li key={it.id} className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div>
-                <div className="font-medium">{it.title}</div>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{it.body}</p>
-                <span className="mt-2 inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs dark:bg-zinc-900">{it.status}</span>
-              </div>
-              <Button variant="ghost" onClick={() => setItems((prev) => prev.filter((x) => x.id !== it.id))}>
-                Delete
-              </Button>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Shell>
+        <div className="folio-index"><span>PLATE</span><strong>06</strong><small>local / private</small></div>
+      </header>
+
+      <section className="folio-stage" aria-labelledby="stage-title">
+        <div className="stem" aria-hidden="true"><i /><i /><i /><i /></div>
+        <div className="stage-copy"><p className="section-label">CURRENT GARDEN</p><h2 id="stage-title">{openCount || "No"} living {openCount === 1 ? "thread" : "threads"}</h2><p>Each entry is a seed. Give it enough detail to know whether it should grow.</p></div>
+        <div className="stage-stats"><span><b>{items.length}</b> total notes</span><span><b>{filtered.length}</b> in view</span></div>
+      </section>
+
+      <section className="folio-workbench" aria-labelledby="new-note-title">
+        <div className="workbench-label"><span className="pin" /><p className="section-label">PLANT A NEW NOTE</p><p>Local browser storage only.</p></div>
+        <div className="workbench-form">
+          <label><span>Title</span><input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="What wants to happen?" /></label>
+          <label><span>Details</span><textarea value={draft.body} onChange={(event) => setDraft({ ...draft, body: event.target.value })} placeholder="The useful context for a collaborator…" /></label>
+          <label><span>Status</span><select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value })}><option>Draft</option><option>Open</option><option>Active</option><option>Done</option></select></label>
+          <button id="new-note-title" className="seed-button" onClick={addItem}>Plant note <span>→</span></button>
+        </div>
+      </section>
+
+      <section className="folio-list" aria-labelledby="notes-title">
+        <div className="list-heading"><div><p className="section-label">THE SPECIMENS</p><h2 id="notes-title">Collaboration notes</h2></div><label className="search-field"><span>Search the folio</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="title, detail, status" /></label></div>
+        {filtered.length === 0 ? <p className="empty-note">Nothing in this patch. Try a different search or plant a new note above.</p> : <ol className="note-list">{filtered.map((item, index) => <li key={item.id} className="note-row"><span className="row-number">{String(index + 1).padStart(2, "0")}</span><div className="note-copy"><h3>{item.title}</h3><p>{item.body || "No detail recorded yet."}</p></div><span className={`status status-${item.status.toLowerCase()}`}>{item.status}</span><button className="remove-button" onClick={() => setItems((current) => current.filter((entry) => entry.id !== item.id))}>Remove</button></li>)}</ol>}
+      </section>
+
+      <footer className="folio-footer"><span>COLLABORATIONS / 2026</span><span>State stays in this browser. No backend is implied.</span></footer>
+    </main>
   );
 }

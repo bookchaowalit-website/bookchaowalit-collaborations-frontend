@@ -27,6 +27,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {/* THESIS: A collaboration list grows like a botanical folio, refusing the flat CRUD dashboard. OWN-WORLD: warm paper, moss ink, pressed-leaf rules, and rose specimen marks. STORY: visitors plant a note, scan living threads, and remove dead growth. FIRST VIEWPORT: oversized folio title, stem index, living-thread count, then the note workbench. FORM: botanical sequence folio, assigned grounded direction 6, seed cfce187f. FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance */}
         <Analytics />
         <SpeedInsights />
         {children}
